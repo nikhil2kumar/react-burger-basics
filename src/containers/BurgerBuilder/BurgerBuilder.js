@@ -10,18 +10,9 @@ import Spinner from '../../components/UI/Spinner/Spinner';
 import withErrorHandler from '../../hoc/withErrorHandler/withErrorHandler';
 import * as actionTypes from '../../store/actions';
 
-const INGREDIENT_PRICES = {
-    'meat': 0.3,
-    'cheese': 0.5,
-    'salad': 0.4,
-    'bacon': 0.5
-}
-
 class BurgerBuilder extends Component {
 
-    state = {
-        totalPrice: 4,
-        purchasable: false,
+    state = {       
         purchasing: false,
         loading: false,
         error: false
@@ -38,29 +29,7 @@ class BurgerBuilder extends Component {
             .map(igkey => ingredients[igkey])
             .reduce((sum, el) => sum + el, 0);
 
-        this.setState({ purchasable: sum > 0 })
-    }
-
-    addIngredientHandler = (type) => {
-        let count = this.state.ingredients[type] + 1;
-        let updatedIngredients = { ...this.state.ingredients };
-        updatedIngredients[type] = count;
-        let priceAddition = INGREDIENT_PRICES[type];
-        let newPrice = this.state.totalPrice + priceAddition;
-        this.setState({ ingredients: updatedIngredients, totalPrice: newPrice });
-        this.updatePurchaseState(updatedIngredients);
-    }
-
-    removeIngredientHandler = (type) => {
-        if (this.state.ingredients[type] > 0) {
-            let count = this.state.ingredients[type] - 1;
-            let updatedIngredients = { ...this.state.ingredients };
-            updatedIngredients[type] = count;
-            let priceDeduction = INGREDIENT_PRICES[type];
-            let newPrice = this.state.totalPrice - priceDeduction;
-            this.setState({ ingredients: updatedIngredients, totalPrice: newPrice });
-            this.updatePurchaseState(updatedIngredients);
-        }
+       return sum > 0;
     }
 
     purchaseHandler = () => {
@@ -72,19 +41,7 @@ class BurgerBuilder extends Component {
     }
 
     purchaseContinueHandler = () => {
-        const queryParams = [];
-        for(let i in this.state.ingredients){
-            queryParams.push(encodeURIComponent(i) + '=' + encodeURIComponent(this.state.ingredients[i]));
-        }
-        queryParams.push('price=' + this.state.totalPrice);
-        
-        const queryString = queryParams.join('&');
-
-        this.props.history.push({
-            pathname: '/checkout',
-            search: '?' + queryString
-        });
-
+        this.props.history.push('/checkout');
     }
 
     render() {
@@ -103,10 +60,10 @@ class BurgerBuilder extends Component {
                 <Burger ingredients={this.props.ings} />
                 <BuildControls
                     ingredientAdded={this.props.onIngredientAdded}
-                    ingredientRemoved={this.props.ingredientRemoved}
+                    ingredientRemoved={this.props.onIngredientRemoved}
                     disabled={disabledInfo}
-                    purchasable={this.state.purchasable}
-                    price={this.state.totalPrice}
+                    purchasable={this.updatePurchaseState(this.props.ings)}
+                    price={this.props.price}
                     ordered={this.purchaseHandler} />
             </React.Fragment>);
 
@@ -114,7 +71,7 @@ class BurgerBuilder extends Component {
                 ingredients={this.props.ings}
                 purchaseCanceled={this.purchaseCancelHandler}
                 purchaseContinue={this.purchaseContinueHandler}
-                price={this.state.totalPrice} />
+                price={this.props.price} />
         }
 
         if (this.state.loading) {
@@ -134,7 +91,8 @@ class BurgerBuilder extends Component {
 
 const mapStateToProps = state => {
     return {
-        ings: state.ingredients
+        ings: state.ingredients,
+        price: state.totalPrice
     }
 }
 
